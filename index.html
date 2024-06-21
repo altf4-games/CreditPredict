@@ -103,15 +103,12 @@
             const userInput = document.getElementById('user-input').value;
             document.getElementById('user-input').value = '';
 
-            // Display user message
             displayMessage('user', userInput);
 
-            // Collect user input into conversation array
             conversation.push(userInput);
 
             // Check if conversation is complete
             if (conversation.length == 11) {
-                // Send data to the FastAPI endpoint
                 const data = {
                     Gender: conversation[0],
                     Married: conversation[1],
@@ -144,10 +141,10 @@
                     "How many dependents do you have? (0/1/2/3+)",
                     "What's your education level? (Graduate/Not Graduate)",
                     "Are you self-employed? (Yes/No)",
-                    "What's your applicant income?",
-                    "What's your co-applicant income?",
-                    "What's the loan amount?",
-                    "What's the loan amount term?",
+                    "What's your applicant income? ($)",
+                    "What's your co-applicant income? ($)",
+                    "What's the loan amount? ($)",
+                    "What's the loan amount term? (Days)",
                     "Do you have a credit history? (1/0)",
                     "What's your property area? (Urban/Semiurban/Rural)"
                 ];
