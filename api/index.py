@@ -1,8 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
 import joblib
+
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 
 # Load the models
 credit_score_model = joblib.load('credit_score_model.joblib')
@@ -19,6 +25,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory="../static"), name="static")
 
 # Define request bodies
 class CreditScoreRequest(BaseModel):
