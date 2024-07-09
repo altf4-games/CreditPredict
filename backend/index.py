@@ -2,12 +2,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
-from joblib import load
 import joblib
 
 # Load the models
 credit_score_model = joblib.load('credit_score_model.joblib')
-loan_approval_model = load('loan_approval_model.joblib')
+loan_approval_model = joblib.load('loan_approval_model.joblib')
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -33,17 +32,18 @@ class CreditScoreRequest(BaseModel):
     Total_EMI_per_month: float
 
 class LoanApplication(BaseModel):
-    Gender: str
-    Married: str
-    Dependents: int
-    Education: str
-    Self_Employed: str
-    ApplicantIncome: float
-    CoapplicantIncome: float
-    LoanAmount: float
-    Loan_Amount_Term: float
-    Credit_History: int
-    Property_Area: str
+    loan_id: int
+    no_of_dependents: int
+    education: str
+    self_employed: str
+    income_annum: float
+    loan_amount: float
+    loan_term: int
+    cibil_score: float
+    residential_assets_value: float
+    commercial_assets_value: float
+    luxury_assets_value: float
+    bank_asset_value: float
 
 # Prediction endpoints
 @app.post("/predict/credit_score")
@@ -55,13 +55,31 @@ def predict_credit_score(data: CreditScoreRequest):
     return {"predicted_credit_score": predicted_score}
 
 @app.post("/predict/loan_approval")
-def predict_loan_approval(application: LoanApplication):
-    data = pd.DataFrame([application.dict()])
-    try:
-        prediction = loan_approval_model.predict(data)
-        return {"predicted_status": prediction[0]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+def predict(application: LoanApplication):
+    # Convert input data to DataFrame
+    data = {
+        'loan_id': [application.loan_id],
+        'no_of_dependents': [application.no_of_dependents],
+        'education': [application.education],
+        'self_employed': [application.self_employed],
+        'income_annum': [application.income_annum],
+        'loan_amount': [application.loan_amount],
+        'loan_term': [application.loan_term],
+        'cibil_score': [application.cibil_score],
+        'residential_assets_value': [application.residential_assets_value],
+        'commercial_assets_value': [application.commercial_assets_value],
+        'luxury_assets_value': [application.luxury_assets_value],
+        'bank_asset_value': [application.bank_asset_value]
+    }
+    
+    df = pd.DataFrame(data)
+    
+    X = df.drop(columns=['loan_id'])
+    
+    prediction = loan_approval_model.predict(X)
+    result = 'Approved' if prediction[0] == 1 else 'Rejected'
+    
+    return {"prediction": result}
 
 # Run the app with uvicorn
 if __name__ == "__main__":
