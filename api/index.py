@@ -4,11 +4,19 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
 import joblib
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
 
 def warn(*args, **kwargs):
     pass
 import warnings
 warnings.warn = warn
+
+load_dotenv()
+
+GOOGLE_API_KEY=os.getenv("API_KEY")
+genai.configure(api_key=GOOGLE_API_KEY)
 
 # Load the models
 credit_score_model = joblib.load('credit_score_model.joblib')
@@ -64,7 +72,6 @@ def predict_credit_score(data: CreditScoreRequest):
 
 @app.post("/predict/loan_approval")
 def predict(application: LoanApplication):
-    # Convert input data to DataFrame
     data = {
         'loan_id': [application.loan_id],
         'no_of_dependents': [application.no_of_dependents],
@@ -88,6 +95,16 @@ def predict(application: LoanApplication):
     result = 'Approved' if prediction[0] == 1 else 'Rejected'
     
     return {"prediction": result}
+
+class PromptRequest(BaseModel):
+    prompt: str
+
+@app.post("/generate_report")
+def generate_report(request: PromptRequest):
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content(request.prompt)
+    print(response.text)
+    return {"prediction": response.text}
 
 # Run the app with uvicorn
 if __name__ == "__main__":
