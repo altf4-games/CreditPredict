@@ -106,9 +106,9 @@ async function sendMessage() {
       if (result.predicted_credit_score == "Good") {
         pcs_score = 1;
       } else if (result.predicted_credit_score == "Standard") {
-        pcs_score = 0.5;
+        pcs_score = 0.75;
       } else {
-        pcs_score = 0.1;
+        pcs_score = 0.3;
       }
       console.log(pcs_score);
 
@@ -150,24 +150,23 @@ async function sendMessage() {
 
       // Calculate final credit score
       const final_score =
-        pcs_score * 0.25 +
-        behavioral_score * 0.15 +
-        educational_score * 0.15 +
-        lifestyle_score * 0.15 +
-        investment_score * 0.15 +
-        health_score * 0.15;
+        pcs_score * 0.5 +
+        behavioral_score * 0.1 +
+        educational_score * 0.1 +
+        lifestyle_score * 0.1 +
+        investment_score * 0.1 +
+        health_score * 0.1;
 
       console.log(final_score);
       // Map final score to categories
       const score_mapping_reverse = { 2: "Good", 1: "Standard", 0: "Poor" };
       const predicted_score =
-        final_score >= 2000
-          ? "Good"
-          : final_score >= 1000
-          ? "Standard"
-          : "Poor";
+        final_score >= 100 ? "Good" : final_score >= 50 ? "Standard" : "Poor";
 
-      displayMessage("bot", `Predicted Credit Score: ${predicted_score}`);
+      displayMessage(
+        "bot",
+        `Predicted Credit Score: ${final_score}\nCredit Risk: ${predicted_score}`
+      );
 
       const prompt = `Generate a financial health and risk assessment report for the user with data ${JSON.stringify(
         user_data
