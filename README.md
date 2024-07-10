@@ -28,7 +28,7 @@ API_KEY=
 ```
 6. Start the FastAPI server using uvicorn:
 ```bash
-uvicorn index:app --reload
+python -m  uvicorn index:app --reload
 ```
 6. Access the application at:
 ```bash
