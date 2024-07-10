@@ -171,7 +171,7 @@ async function sendMessage() {
 
       const prompt = `Generate a financial health and risk assessment report for the user with data ${JSON.stringify(
         user_data
-      )} and credit score ${predicted_score}. The report should be an index.html file with graphs and suggestions for the user. Only reply with html file and no instructions, keep the html file modern looking with css and it should look good on phones`;
+      )} and credit score ${predicted_score}. The report should be an index.html file with graphs and suggestions for the user, the data is provided in $ - convert it to inr. Only reply with html file and no instructions, keep the html file modern looking with css and it should look good on phones`;
 
       const req = await fetch("http://127.0.0.1:8000/generate_report", {
         method: "POST",
