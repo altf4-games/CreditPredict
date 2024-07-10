@@ -1,4 +1,5 @@
 let conversation = [];
+let user_data;
 
 async function sendMessage() {
   const userInput = document.getElementById("user-input").value.trim();
@@ -56,7 +57,7 @@ async function sendMessage() {
       displayMessage("bot", questions[conversation.length - 1]);
     }
   } else if (conversation[0] === "Credit Score") {
-    if (conversation.length === 26) {
+    if (conversation.length === 29) {
       const data = {
         Monthly_Inhand_Salary: parseFloat(conversation[1] / 80),
         Num_Bank_Accounts: parseFloat(conversation[2]),
@@ -75,11 +76,11 @@ async function sendMessage() {
         Job_Stability: parseFloat(conversation[15]),
         Professional_Certifications: conversation[16],
         Homeownership_Status: conversation[17],
-        Car_Ownership_Expenses: parseFloat(conversation[18]),
+        Car_Ownership_Expenses: parseFloat(conversation[18] / 80),
         Dependents_Count: parseInt(conversation[19]),
         Retirement_Savings_Participation: conversation[20],
         Investment_Portfolio_Diversity: parseFloat(conversation[21]),
-        Value_of_Assets: parseFloat(conversation[22]),
+        Value_of_Assets: parseFloat(conversation[22] / 80),
         Investment_Activity_Frequency: parseFloat(conversation[23]),
         Investment_Growth_Rate: parseFloat(conversation[24]),
         Health_Insurance_Coverage: conversation[25],
@@ -87,7 +88,7 @@ async function sendMessage() {
         Wellness_Program_Participation: conversation[27],
         Disability_Status: conversation[28],
       };
-      console.log(JSON.stringify(data));
+      user_data = data;
 
       const response = await fetch(
         "http://127.0.0.1:8000/predict/credit_score",
@@ -100,7 +101,16 @@ async function sendMessage() {
         }
       );
       const result = await response.json();
-      const pcs_score = parseFloat(result.predicted_credit_score);
+      console.log(result);
+      let pcs_score = 0;
+      if (result.predicted_credit_score == "Good") {
+        pcs_score = 1;
+      } else if (result.predicted_credit_score == "Standard") {
+        pcs_score = 0.5;
+      } else {
+        pcs_score = 0.1;
+      }
+      console.log(pcs_score);
 
       // Perform calculations for other scores
       const behavioral_score =
@@ -108,30 +118,35 @@ async function sendMessage() {
         data.Frequency_of_Overdrafts * 0.2 +
         data.Consistency_in_Habits * 0.25 +
         (data.Spending_Categories === "Essentials" ? 1 : 0) * 0.25;
+      console.log(behavioral_score);
 
       const educational_score =
         (data.Education_Level === "Graduate" ? 1 : 0) * 0.3 +
         data.Job_Stability * 0.3 +
         (data.Field_of_Study === "Relevant" ? 1 : 0) * 0.2 +
         (data.Professional_Certifications === "Yes" ? 1 : 0) * 0.2;
+      console.log(educational_score);
 
       const lifestyle_score =
         (data.Homeownership_Status === "Own" ? 1 : 0) * 0.3 +
         data.Car_Ownership_Expenses * 0.25 +
         data.Dependents_Count * 0.25 +
         (data.Retirement_Savings_Participation === "Yes" ? 1 : 0) * 0.2;
+      console.log(lifestyle_score);
 
       const investment_score =
         data.Investment_Portfolio_Diversity * 0.3 +
         data.Value_of_Assets * 0.3 +
         data.Investment_Activity_Frequency * 0.2 +
         data.Investment_Growth_Rate * 0.2;
+      console.log(investment_score);
 
       const health_score =
         (data.Health_Insurance_Coverage === "Yes" ? 1 : 0) * 0.3 +
         data.Medical_Expenses_Frequency * 0.3 +
         (data.Wellness_Program_Participation === "Yes" ? 1 : 0) * 0.2 +
         (data.Disability_Status === "Yes" ? 1 : 0) * 0.2;
+      console.log(health_score);
 
       // Calculate final credit score
       const final_score =
@@ -142,12 +157,37 @@ async function sendMessage() {
         investment_score * 0.15 +
         health_score * 0.15;
 
+      console.log(final_score);
       // Map final score to categories
       const score_mapping_reverse = { 2: "Good", 1: "Standard", 0: "Poor" };
       const predicted_score =
-        final_score >= 0.8 ? "Good" : final_score >= 0.5 ? "Standard" : "Poor";
+        final_score >= 2000
+          ? "Good"
+          : final_score >= 1000
+          ? "Standard"
+          : "Poor";
 
       displayMessage("bot", `Predicted Credit Score: ${predicted_score}`);
+
+      const prompt = `Generate a financial health and risk assessment report for the user with data ${JSON.stringify(
+        user_data
+      )} and credit score ${predicted_score}. The report should be an index.html file with graphs and suggestions for the user. Only reply with html file and no instructions, keep the html file modern looking with css and it should look good on phones`;
+
+      const req = await fetch("http://127.0.0.1:8000/generate_report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const res = await req.json();
+      let fileContent = res.prediction;
+      fileContent = fileContent.replace(/^```html\n/, "");
+      fileContent = fileContent.replace(/\n```$/, "");
+
+      download(fileContent, "report.html", "text/plain");
+
       conversation = []; // Reset conversation after completion
     } else {
       const questions = [
@@ -157,7 +197,7 @@ async function sendMessage() {
         "What's the interest rate on your loans? (%)",
         "How many days are you delayed from due date on average?",
         "How many credit inquiries have you had?",
-        "What's your credit utilization ratio?",
+        "What's your credit utilization ratio? (%)",
         "What's your total EMI per month? (₹)",
         "What's your monthly savings rate? (%)",
         "How frequently do you have overdrafts? (Number per month)",
@@ -195,6 +235,25 @@ async function sendMessage() {
   }
 }
 
+function download(data, filename, type) {
+  var file = new Blob([data], { type: type });
+  if (window.navigator.msSaveOrOpenBlob)
+    // IE10+
+    window.navigator.msSaveOrOpenBlob(file, filename);
+  else {
+    // Others
+    var a = document.createElement("a"),
+      url = URL.createObjectURL(file);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  }
+}
 function displayMessage(sender, message) {
   const chatBox = document.getElementById("chat-box");
   const messageElement = document.createElement("div");

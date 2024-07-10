@@ -19,8 +19,8 @@ GOOGLE_API_KEY=os.getenv("API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Load the models
-credit_score_model = joblib.load('credit_score_model.joblib')
-loan_approval_model = joblib.load('loan_approval_model.joblib')
+credit_score_model = joblib.load('models/credit_score_model.joblib')
+loan_approval_model = joblib.load('models/loan_approval_model.joblib')
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -103,7 +103,6 @@ class PromptRequest(BaseModel):
 def generate_report(request: PromptRequest):
     model = genai.GenerativeModel('gemini-1.5-flash')
     response = model.generate_content(request.prompt)
-    print(response.text)
     return {"prediction": response.text}
 
 # Run the app with uvicorn
